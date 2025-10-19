@@ -16,7 +16,6 @@ class Pattern implements PropertyConstraint
             throw new \InvalidArgumentException('The pattern provided must not be empty.');
         }
 
-        // Vérifie que le pattern est une expression régulière valide
         if (@preg_match($this->pattern, '') === false) {
             throw new \InvalidArgumentException(sprintf(
                 'The pattern "%s" is not a valid regular expression.',
