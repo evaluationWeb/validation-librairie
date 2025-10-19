@@ -52,6 +52,34 @@ class ValidatorTest extends TestCase
         $this->validator->validate($user);
     }
 
+    public function testItPassesWhenPatternConstraintIsSatisfied(): void
+    {
+        $user = $this->createValidUser();
+        $user->setPattern('User123');
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
+
+    public function testItFailsWhenPatternConstraintIsViolated(): void
+    {
+        $user = $this->createValidUser();
+        $user->setPattern('User_123');
+
+        $this->expectException(ValidationException::class);
+        $this->validator->validate($user);
+    }
+
+    public function testItAllowsNullWhenPatternConstraintIsSet(): void
+    {
+        $user = $this->createValidUser();
+        $user->setPattern(null);
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
     private function createValidUser(): User
     {
         $user = new User();

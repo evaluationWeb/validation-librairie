@@ -5,6 +5,7 @@ namespace Mithridatem\Validation\Tests\Fixtures;
 use Mithridatem\Validation\Attributes\Email;
 use Mithridatem\Validation\Attributes\Length;
 use Mithridatem\Validation\Attributes\NotBlank;
+use Mithridatem\Validation\Attributes\Pattern;
 
 class User
 {
@@ -17,6 +18,10 @@ class User
 
     #[Email]
     private ?string $email = null;
+
+    #[Pattern(pattern: '/^[a-zA-Z0-9]+$/')]
+    private ?string $pattern = null;
+
 
     public function setFirstname(?string $firstname): void
     {
@@ -31,5 +36,10 @@ class User
     public function setEmail(?string $email): void
     {
         $this->email = $email;
+    }
+
+    public function setPattern(?string $pattern): void
+    {
+        $this->pattern = $pattern;
     }
 }
