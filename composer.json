@@ -1,0 +1,31 @@
+{
+    "name": "mithridatem/validation",
+    "description": "Attribute-based validation components",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mithridatem\\Validation\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mithridatem\\Validation\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "authors": [
+        {
+            "name": "Mathieu Mithridate",
+            "email": "mathieumithridate@adrar-formation.com"
+        }
+    ]
+}
