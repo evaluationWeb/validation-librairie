@@ -37,6 +37,7 @@ En cas d'echec, le `Validator` leve une `Mithridatem\Validation\Exception\Valida
 - `Negative` : impose une valeur négative à un entier  
 - `NegativeOrZero` : impose une valeur négative ou égale à zéro à un entier  
 - `Positive` : impose une valeur positive à un entier  
+- `PositiveOrZero` : impose une valeur positive ou égale à zéro à un entier  
 
 ## Developpement
 

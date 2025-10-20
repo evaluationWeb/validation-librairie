@@ -9,6 +9,7 @@ use Mithridatem\Validation\Attributes\NegativeOrZero;
 use Mithridatem\Validation\Attributes\NotBlank;
 use Mithridatem\Validation\Attributes\Pattern;
 use Mithridatem\Validation\Attributes\Positive;
+use Mithridatem\Validation\Attributes\PositiveOrZero;
 
 class User
 {
@@ -32,7 +33,10 @@ class User
     private ?int $negativeOrZero = null;
 
     #[Positive]
-    private ?int $postivie = null;
+    private ?int $positive = null;
+
+    #[PositiveOrZero]
+    private ?int $positiveOrZero = null;
 
     public function setFirstname(?string $firstname): void
     {
@@ -66,6 +70,12 @@ class User
 
     public function setPositive(?int $positive): void
     {
-        $this->postivie = $positive;
+        $this->positive = $positive;
+    }
+
+
+    public function setPositiveOrZero(?int $positiveOrZero): void
+    {
+        $this->positiveOrZero = $positiveOrZero;
     }
 }
