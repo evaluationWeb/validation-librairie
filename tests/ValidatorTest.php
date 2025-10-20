@@ -112,6 +112,47 @@ class ValidatorTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function testItPassesWhenNegativeOrZeroIsNegative(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegativeOrZero(-5);
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
+
+    public function testItPassesWhenNegativeOrZeroIsZero(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegativeOrZero(0);
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
+
+    public function testItFailsWhenNegativeOrZeroIsPositive(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegativeOrZero(3);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('doit être un nombre négatif ou égal à zéro');
+
+        $this->validator->validate($user);
+    }
+
+    public function testItAllowsNullWhenNegativeOrZeroIsSet(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegativeOrZero(null);
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
+
     private function createValidUser(): User
     {
         $user = new User();

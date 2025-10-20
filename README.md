@@ -35,6 +35,7 @@ En cas d'echec, le `Validator` leve une `Mithridatem\Validation\Exception\Valida
 - `Email` : valide une adresse electronique avec `FILTER_VALIDATE_EMAIL`
 - `Pattern` : impose un pattern regex à une string
 - `Negative` : impose une valeur négative à un entier  
+- `NegativeOrZero` : impose une valeur négative ou égale à zéro à un entier  
 
 ## Developpement
 

@@ -5,6 +5,7 @@ namespace Mithridatem\Validation\Tests\Fixtures;
 use Mithridatem\Validation\Attributes\Email;
 use Mithridatem\Validation\Attributes\Length;
 use Mithridatem\Validation\Attributes\Negative;
+use Mithridatem\Validation\Attributes\NegativeOrZero;
 use Mithridatem\Validation\Attributes\NotBlank;
 use Mithridatem\Validation\Attributes\Pattern;
 
@@ -25,6 +26,9 @@ class User
 
     #[Negative]
     private ?int $negative = null;
+
+    #[NegativeOrZero]
+    private ?int $negativeOrZero = null;
 
     public function setFirstname(?string $firstname): void
     {
@@ -49,5 +53,10 @@ class User
     public function setNegative(?int $negative): void
     {
         $this->negative = $negative;
+    }
+
+    public function setNegativeOrZero(?int $negativeOrZero): void
+    {
+        $this->negativeOrZero = $negativeOrZero;
     }
 }
