@@ -33,6 +33,7 @@ En cas d'echec, le `Validator` leve une `Mithridatem\Validation\Exception\Valida
 - `NotBlank` : interdit les valeurs nulles ou les chaines vides
 - `Length` : impose une longueur minimale et/ou maximale
 - `Email` : valide une adresse electronique avec `FILTER_VALIDATE_EMAIL`
+- `Pattern` : impose un pattern regex à une string
 
 ## Developpement
 
