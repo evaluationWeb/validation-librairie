@@ -4,6 +4,7 @@ namespace Mithridatem\Validation\Tests\Fixtures;
 
 use Mithridatem\Validation\Attributes\Email;
 use Mithridatem\Validation\Attributes\Length;
+use Mithridatem\Validation\Attributes\Negative;
 use Mithridatem\Validation\Attributes\NotBlank;
 use Mithridatem\Validation\Attributes\Pattern;
 
@@ -22,6 +23,8 @@ class User
     #[Pattern(pattern: '/^[a-zA-Z0-9]+$/')]
     private ?string $pattern = null;
 
+    #[Negative]
+    private ?int $negative = null;
 
     public function setFirstname(?string $firstname): void
     {
@@ -41,5 +44,10 @@ class User
     public function setPattern(?string $pattern): void
     {
         $this->pattern = $pattern;
+    }
+
+    public function setNegative(?int $negative): void
+    {
+        $this->negative = $negative;
     }
 }

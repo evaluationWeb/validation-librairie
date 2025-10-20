@@ -80,6 +80,38 @@ class ValidatorTest extends TestCase
 
         $this->assertTrue(true);
     }
+
+    public function testItPassesWhenNegativeConstraintIsSatisfied(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegative(-10);
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
+
+    public function testItFailsWhenNegativeConstraintIsViolated(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegative(5);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('doit être un nombre négatif');
+
+        $this->validator->validate($user);
+    }
+
+    public function testItAllowsNullWhenNegativeConstraintIsSet(): void
+    {
+        $user = $this->createValidUser();
+        $user->setNegative(null);
+
+        $this->validator->validate($user);
+
+        $this->assertTrue(true);
+    }
+
     private function createValidUser(): User
     {
         $user = new User();
