@@ -2,7 +2,6 @@
 
 namespace Mithridatem\Validation\Tests;
 
-use Mithridatem\Validation\Exception\ValidationException;
 use Mithridatem\Validation\Tests\Fixtures\User;
 use Mithridatem\Validation\Validator;
 use PHPUnit\Framework\TestCase;
@@ -20,9 +19,7 @@ class ValidatorTest extends TestCase
     {
         $user = $this->createValidUser();
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true); // No exception thrown
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItFailsWhenNotBlankConstraintIsViolated(): void
@@ -30,8 +27,10 @@ class ValidatorTest extends TestCase
         $user = new User();
         $user->setFirstname(null);
 
-        $this->expectException(ValidationException::class);
-        $this->validator->validate($user);
+        $errors = $this->validator->validate($user);
+
+        $this->assertSame(['firstname'], array_keys($errors));
+        $this->assertCount(1, $errors['firstname']);
     }
 
     public function testItFailsWhenLengthConstraintMinimumIsViolated(): void
@@ -39,8 +38,10 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setFirstname('Jo');
 
-        $this->expectException(ValidationException::class);
-        $this->validator->validate($user);
+        $errors = $this->validator->validate($user);
+
+        $this->assertSame(['firstname'], array_keys($errors));
+        $this->assertCount(1, $errors['firstname']);
     }
 
     public function testItFailsWhenEmailConstraintIsViolated(): void
@@ -48,8 +49,10 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setEmail('invalid-email');
 
-        $this->expectException(ValidationException::class);
-        $this->validator->validate($user);
+        $errors = $this->validator->validate($user);
+
+        $this->assertSame(['email'], array_keys($errors));
+        $this->assertCount(1, $errors['email']);
     }
 
     public function testItPassesWhenPatternConstraintIsSatisfied(): void
@@ -57,9 +60,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPattern('User123');
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItFailsWhenPatternConstraintIsViolated(): void
@@ -67,8 +68,10 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPattern('User_123');
 
-        $this->expectException(ValidationException::class);
-        $this->validator->validate($user);
+        $errors = $this->validator->validate($user);
+
+        $this->assertSame(['pattern'], array_keys($errors));
+        $this->assertCount(1, $errors['pattern']);
     }
 
     public function testItAllowsNullWhenPatternConstraintIsSet(): void
@@ -76,9 +79,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPattern(null);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItPassesWhenNegativeConstraintIsSatisfied(): void
@@ -86,9 +87,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegative(-10);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItFailsWhenNegativeConstraintIsViolated(): void
@@ -96,10 +95,11 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegative(5);
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('doit être un nombre négatif');
+        $errors = $this->validator->validate($user);
 
-        $this->validator->validate($user);
+        $this->assertSame(['negative'], array_keys($errors));
+        $this->assertCount(1, $errors['negative']);
+        $this->assertStringContainsString('doit être un nombre négatif', $errors['negative'][0]);
     }
 
     public function testItAllowsNullWhenNegativeConstraintIsSet(): void
@@ -107,9 +107,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegative(null);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItPassesWhenNegativeOrZeroIsNegative(): void
@@ -117,9 +115,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegativeOrZero(-5);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItPassesWhenNegativeOrZeroIsZero(): void
@@ -127,9 +123,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegativeOrZero(0);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItFailsWhenNegativeOrZeroIsPositive(): void
@@ -137,10 +131,11 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegativeOrZero(3);
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('doit être un nombre négatif ou égal à zéro');
+        $errors = $this->validator->validate($user);
 
-        $this->validator->validate($user);
+        $this->assertSame(['negativeOrZero'], array_keys($errors));
+        $this->assertCount(1, $errors['negativeOrZero']);
+        $this->assertStringContainsString('doit être un nombre négatif ou égal à zéro', $errors['negativeOrZero'][0]);
     }
 
     public function testItAllowsNullWhenNegativeOrZeroIsSet(): void
@@ -148,9 +143,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setNegativeOrZero(null);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
 
@@ -159,9 +152,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositive(10);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItFailsWhenPositiveConstraintIsViolated(): void
@@ -169,10 +160,11 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositive(-5);
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('doit être un nombre positif');
+        $errors = $this->validator->validate($user);
 
-        $this->validator->validate($user);
+        $this->assertSame(['positive'], array_keys($errors));
+        $this->assertCount(1, $errors['positive']);
+        $this->assertStringContainsString('doit être un nombre positif', $errors['positive'][0]);
     }
 
     public function testItAllowsNullWhenPositiveConstraintIsSet(): void
@@ -180,9 +172,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositive(null);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
 
@@ -191,9 +181,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositiveOrZero(5);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItPassesWhenPositiveOrZeroIsZero(): void
@@ -201,9 +189,7 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositiveOrZero(0);
 
-        $this->validator->validate($user);
-
-        $this->assertTrue(true);
+        $this->assertSame([], $this->validator->validate($user));
     }
 
     public function testItFailsWhenPositiveOrZeroIsNegative(): void
@@ -211,10 +197,11 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositiveOrZero(-3);
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('doit être un nombre positif ou égal à zéro');
+        $errors = $this->validator->validate($user);
 
-        $this->validator->validate($user);
+        $this->assertSame(['positiveOrZero'], array_keys($errors));
+        $this->assertCount(1, $errors['positiveOrZero']);
+        $this->assertStringContainsString('doit être un nombre positif ou égal à zéro', $errors['positiveOrZero'][0]);
     }
 
     public function testItAllowsNullWhenPositiveOrZeroIsSet(): void
@@ -222,9 +209,72 @@ class ValidatorTest extends TestCase
         $user = $this->createValidUser();
         $user->setPositiveOrZero(null);
 
-        $this->validator->validate($user);
+        $this->assertSame([], $this->validator->validate($user));
+    }
 
-        $this->assertTrue(true);
+    public function testItCollectsAllErrorsAcrossPropertiesAndConstraints(): void
+    {
+        $user = $this->createValidUser();
+        $user->setFirstname('');
+        $user->setEmail('invalid');
+        $user->setPositive(-1);
+
+        $this->assertSame([
+            'firstname' => [
+                'La propriete "firstname" ne peut pas etre vide.',
+                'La propriete "firstname" doit contenir au moins 3 caracteres.',
+            ],
+            'email' => ['La propriete "email" doit contenir une adresse email valide.'],
+            'positive' => ['La propriété "positive" doit être un nombre positif.'],
+        ], $this->validator->validate($user));
+    }
+
+    public function testErrorsDoNotLeakBetweenValidations(): void
+    {
+        $user = $this->createValidUser();
+        $user->setEmail('invalid');
+        $this->assertArrayHasKey('email', $this->validator->validate($user));
+
+        $user->setEmail('valid@example.com');
+        $this->assertSame([], $this->validator->validate($user));
+    }
+
+    public function testUninitializedPropertyIsValidatedAsNull(): void
+    {
+        $entity = new class {
+            #[\Mithridatem\Validation\Attributes\NotBlank]
+            private string $name;
+        };
+
+        $this->assertSame([
+            'name' => ['La propriete "name" ne peut pas etre nulle.'],
+        ], $this->validator->validate($entity));
+    }
+
+    public function testObjectWithoutConstraintsReturnsEmptyArray(): void
+    {
+        $this->assertSame([], $this->validator->validate(new \stdClass()));
+    }
+
+    public function testInvalidConstraintConfigurationStillThrows(): void
+    {
+        $entity = new class {
+            #[\Mithridatem\Validation\Attributes\Length(min: -1)]
+            public string $name = 'test';
+        };
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->validator->validate($entity);
+    }
+
+    public function testCustomConstraintCanReturnSeveralMessages(): void
+    {
+        $entity = new class {
+            #[MultipleErrors]
+            public string $name = 'invalid';
+        };
+
+        $this->assertSame(['name' => ['First error.', 'Second error.']], $this->validator->validate($entity));
     }
 
     private function createValidUser(): User
@@ -235,5 +285,14 @@ class ValidatorTest extends TestCase
         $user->setEmail('mathieu@example.com');
 
         return $user;
+    }
+}
+
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+class MultipleErrors implements \Mithridatem\Validation\Contracts\PropertyConstraint
+{
+    public function validate(string $property, mixed $value): array
+    {
+        return ['First error.', 'Second error.'];
     }
 }

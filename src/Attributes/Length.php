@@ -3,7 +3,6 @@
 namespace Mithridatem\Validation\Attributes;
 
 use Mithridatem\Validation\Contracts\PropertyConstraint;
-use Mithridatem\Validation\Exception\ValidationException;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
@@ -26,10 +25,11 @@ class Length implements PropertyConstraint
         }
     }
 
-    public function validate(string $property, mixed $value): void
+    /** @return list<string> */
+    public function validate(string $property, mixed $value): array
     {
         if ($value === null) {
-            return;
+            return [];
         }
 
         $length = mb_strlen((string) $value);
@@ -41,7 +41,7 @@ class Length implements PropertyConstraint
                 $this->min
             );
 
-            throw new ValidationException($message);
+            return [$message];
         }
 
         if ($this->max !== null && $length > $this->max) {
@@ -51,7 +51,9 @@ class Length implements PropertyConstraint
                 $this->max
             );
 
-            throw new ValidationException($message);
+            return [$message];
         }
+
+        return [];
     }
 }

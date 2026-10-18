@@ -4,13 +4,13 @@ title: Apercu
 
 # Apercu de Mithridatem Validation
 
-La librairie Mithridatem Validation propose une validation basee sur les attributs natifs de PHP 8.2 et plus. Il suffit d'annoter vos entites ou DTO avec les contraintes puis d'executer le `Validator`. En cas d'erreur, une `Mithridatem\Validation\Exception\ValidationException` est levee avec un message explicite.
+La librairie Mithridatem Validation propose une validation basee sur les attributs natifs de PHP 8.2 et plus. Il suffit d'annoter vos entites ou DTO avec les contraintes puis d'executer le `Validator`. Le validateur retourne toutes les erreurs dans un tableau `array<string, list<string>>` indexé par propriété, ou `[]` si l'objet est valide.
 
 ## Contenu de la librairie
 
 - **Validator** : inspecte les attributs des proprietes et declenche chaque contrainte rencontree.
-- **Contraintes** : `NotBlank`, `Length` et `Email` sont fournies. Il est possible d'ajouter vos propres contraintes en implementant `Mithridatem\Validation\Contracts\PropertyConstraint`.
-- **Exception** : levee lorsqu'une contrainte echoue.
+- **Contraintes** : `NotBlank`, `Length`, `Email`, `Pattern`, `Negative`, `NegativeOrZero`, `Positive` et `PositiveOrZero` sont fournies. Il est possible d'ajouter vos propres contraintes en implementant `Mithridatem\Validation\Contracts\PropertyConstraint`.
+- **Erreurs** : messages regroupés par propriété, sans interruption à la première contrainte échouée.
 
 Toutes les classes se trouvent dans l'espace de noms `Mithridatem\Validation`.
 
@@ -25,7 +25,7 @@ composer require mithridatem/validation
 1. Creez une classe metier (entite ou DTO) et ajoutez les attributs de contraintes sur ses proprietes.
 2. Instanciez `Mithridatem\Validation\Validator`.
 3. Appelez `validate($objet)`.
-4. Interceptez `ValidationException` pour traiter les erreurs.
+4. Récupérez le tableau retourné et affichez les messages de chaque propriété.
 
 ```php
 use Mithridatem\Validation\Validator;
@@ -40,7 +40,8 @@ final class Utilisateur
 }
 
 $validator = new Validator();
-$validator->validate(new Utilisateur());
+$errors = $validator->validate(new Utilisateur());
+// ['prenom' => ['La propriete "prenom" ne peut pas etre nulle.']]
 ```
 
 ## Reference des contraintes
@@ -53,21 +54,22 @@ $validator->validate(new Utilisateur());
 
 ### Creer une contrainte personnalisee
 
-Implementez `PropertyConstraint::validate()` et declenchez `ValidationException` en cas de probleme.
+Implémentez `PropertyConstraint::validate(): array` et retournez une liste de messages, ou `[]` en cas de succès.
 
 ```php
 use Attribute;
 use Mithridatem\Validation\Contracts\PropertyConstraint;
-use Mithridatem\Validation\Exception\ValidationException;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class NombrePositif implements PropertyConstraint
 {
-    public function validate(string $property, mixed $value): void
+    public function validate(string $property, mixed $value): array
     {
         if ($value !== null && (!is_numeric($value) || $value <= 0)) {
-            throw new ValidationException(sprintf('%s doit etre positif.', $property));
+            return [sprintf('%s doit etre positif.', $property)];
         }
+
+        return [];
     }
 }
 ```
@@ -82,7 +84,7 @@ composer test
 
 ## Checklist de publication
 
-1. Mettre a jour `CHANGELOG.md` (si present) et la version dans `composer.json`.
+1. Mettre a jour `CHANGELOG.md` (si present) et documenter les ruptures de compatibilité. La version est déterminée par le tag Git.
 2. Executer `composer test`.
 3. Creer un tag (`git tag v0.x.x && git push origin v0.x.x`).
 4. Verifier que Packagist (ou votre registre prive) a bien recupere le tag.

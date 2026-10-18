@@ -3,28 +3,30 @@
 namespace Mithridatem\Validation\Attributes;
 
 use Mithridatem\Validation\Contracts\PropertyConstraint;
-use Mithridatem\Validation\Exception\ValidationException;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Positive implements PropertyConstraint
 {
-    public function validate(string $property, mixed $value): void
+    /** @return list<string> */
+    public function validate(string $property, mixed $value): array
     {
         if ($value === null) {
-            return;
+            return [];
         }
 
         if (!is_numeric($value)) {
-            throw new ValidationException(
+            return [
                 sprintf('La propriété "%s" doit être un nombre.', $property)
-            );
+            ];
         }
 
         if ($value <= 0) {
-            throw new ValidationException(
+            return [
                 sprintf('La propriété "%s" doit être un nombre positif.', $property)
-            );
+            ];
         }
+
+        return [];
     }
 }
