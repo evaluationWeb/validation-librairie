@@ -23,10 +23,38 @@ class Utilisateur
 }
 
 $validator = new Validator();
-$validator->validate(new Utilisateur());
+$errors = $validator->validate(new Utilisateur());
+
+if ($errors !== []) {
+    foreach ($errors as $property => $messages) {
+        foreach ($messages as $message) {
+            echo htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '<br>';
+        }
+    }
+}
 ```
 
-En cas d'echec, le `Validator` leve une `Mithridatem\Validation\Exception\ValidationException`. Interceptez cette exception pour afficher ou journaliser le message.
+`validate()` retourne toutes les erreurs regroupées par propriété :
+
+```php
+[
+    'prenom' => ['La propriete "prenom" ne peut pas etre nulle.'],
+]
+```
+
+Une propriété peut contenir plusieurs messages : toutes ses contraintes sont exécutées.
+Un objet valide retourne `[]`. Les propriétés sans erreur sont absentes du tableau.
+Les erreurs ne sont pas conservées entre deux appels.
+
+## Migration depuis les exceptions
+
+- Remplacez les blocs `try/catch (ValidationException)` par la récupération du tableau retourné par `validate()` et un test `$errors !== []`.
+- Les contraintes personnalisées doivent désormais implémenter `validate(string $property, mixed $value): array` et retourner une liste de messages (`list<string>`), ou `[]` si la valeur est valide.
+- Les contraintes fournies ne lèvent plus de `ValidationException`. Cette classe reste disponible, mais est dépréciée.
+- Les erreurs de configuration (bornes de `Length` invalides, expression régulière invalide) continuent de lever `InvalidArgumentException`.
+- `null` reste accepté par toutes les contraintes sauf `NotBlank`. Une propriété typée non initialisée est traitée comme `null`.
+
+Ce changement du contrat public nécessite d'adapter les applications et les contraintes personnalisées avant la mise à jour.
 
 ## Contraintes disponibles
 

@@ -3,7 +3,6 @@
 namespace Mithridatem\Validation;
 
 use Mithridatem\Validation\Contracts\PropertyConstraint;
-use Mithridatem\Validation\Exception\ValidationException;
 use ReflectionAttribute;
 use ReflectionClass;
 
@@ -12,10 +11,11 @@ class Validator
     /**
      * Inspect attributes on the given entity and run each constraint.
      *
-     * @throws ValidationException If any constraint is violated.
+     * @return array<string, list<string>> All error messages grouped by property.
      */
-    public function validate(object $entity): void
+    public function validate(object $entity): array
     {
+        $errors = [];
         $reflection = new ReflectionClass($entity);
 
         foreach ($reflection->getProperties() as $property) {
@@ -37,8 +37,15 @@ class Validator
             foreach ($attributes as $attribute) {
                 /** @var PropertyConstraint $constraint */
                 $constraint = $attribute->newInstance();
-                $constraint->validate($property->getName(), $value);
+                $messages = $constraint->validate($property->getName(), $value);
+
+                if ($messages !== []) {
+                    $name = $property->getName();
+                    $errors[$name] = array_merge($errors[$name] ?? [], $messages);
+                }
             }
         }
+
+        return $errors;
     }
 }

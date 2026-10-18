@@ -10,7 +10,7 @@ interface PropertyConstraint
     /**
      * Validate the given value for the provided property name.
      *
-     * @throws \Mithridatem\Validation\Exception\ValidationException When the value violates the constraint.
+     * @return list<string> Error messages, or an empty list when valid.
      */
-    public function validate(string $property, mixed $value): void;
+    public function validate(string $property, mixed $value): array;
 }

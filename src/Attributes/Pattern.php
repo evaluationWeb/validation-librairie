@@ -4,7 +4,6 @@ namespace Mithridatem\Validation\Attributes;
 
 use Attribute;
 use Mithridatem\Validation\Contracts\PropertyConstraint;
-use Mithridatem\Validation\Exception\ValidationException;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Pattern implements PropertyConstraint
@@ -24,25 +23,28 @@ class Pattern implements PropertyConstraint
         }
     }
 
-    public function validate(string $property, mixed $value): void
+    /** @return list<string> */
+    public function validate(string $property, mixed $value): array
     {
         if ($value === null) {
-            return;
+            return [];
         }
 
         if (!is_string($value)) {
-            throw new ValidationException(sprintf(
+            return [sprintf(
                 'La propriété "%s" doit être une chaîne de caractères pour être validée par une expression régulière.',
                 $property
-            ));
+            )];
         }
 
         if (!preg_match($this->pattern, $value)) {
-            throw new ValidationException(sprintf(
+            return [sprintf(
                 'La propriété "%s" doit correspondre au pattern : %s.',
                 $property,
                 $this->pattern
-            ));
+            )];
         }
+
+        return [];
     }
 }
