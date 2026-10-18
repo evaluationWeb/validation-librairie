@@ -5,8 +5,8 @@ Merci de votre interet pour l'amelioration de cette librairie !
 ## Configuration du projet
 
 ```bash
-git clone https://github.com/mithridatem/validation.git
-cd validation
+git clone https://github.com/evaluationWeb/validation-librairie.git
+cd validation-librairie
 composer install
 ```
 
@@ -14,6 +14,7 @@ composer install
 
 - Ecrire des tests PHPUnit pour toute nouvelle fonctionnalite ou correction.
 - Lancer `composer test` avant de proposer une modification.
+- Pour une contrainte personnalisée, retourner une liste de messages ou `[]` et vérifier le cumul des erreurs dans les tests. Voir [le guide](docs/overview.md).
 - Respecter le style de code existant (PSR-12).
 
 ## Proposer une contribution
