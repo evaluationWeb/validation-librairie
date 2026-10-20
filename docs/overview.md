@@ -4,7 +4,7 @@ title: Guide de validation
 
 # Guide de Mithridatem Validation
 
-La librairie utilise les attributs PHP pour valider les propriétés d'une entité ou d'un DTO. Le validateur retourne toutes les erreurs regroupées par propriété.
+La librairie utilise les attributs PHP pour valider les propriétés d'une entité ou d'un DTO. Le validateur retourne toutes les erreurs sous forme d'objets immuables `ValidationError`, regroupés par propriété.
 
 ## Installation et premier exemple
 
@@ -19,14 +19,14 @@ Le [README](../README.md) contient un exemple complet avec chargement de l'autol
 ## Contrat du validateur
 
 ```php
-/** @return array<string, list<string>> */
+/** @return array<string, list<ValidationError>> */
 public function validate(object $entity): array;
 ```
 
-Pour chaque propriété inspectée, le validateur lit les attributs implémentant `PropertyConstraint`, instancie les contraintes et rassemble leurs messages.
+Pour chaque propriété inspectée, le validateur lit les attributs implémentant `PropertyConstraint`, instancie les contraintes et rassemble leurs objets `ValidationError`.
 
 - Toutes les contraintes sont exécutées tant qu'aucune erreur de configuration ou de programmation n'interrompt l'exécution.
-- Plusieurs erreurs d'une même propriété sont ajoutées à sa liste de messages.
+- Plusieurs erreurs d'une même propriété sont ajoutées à sa liste d'objets.
 - Une propriété sans erreur n'apparaît pas dans le résultat.
 - Un objet valide, ou sans contrainte, retourne `[]`.
 - Les erreurs ne sont pas conservées entre deux appels.
@@ -40,14 +40,49 @@ Exemple de résultat :
 ```php
 [
     'prenom' => [
-        'La propriete "prenom" ne peut pas etre vide.',
-        'La propriete "prenom" doit contenir au moins 3 caracteres.',
+        new \Mithridatem\Validation\ValidationError('prenom', 'La propriete "prenom" ne peut pas etre vide.', 'not_blank.blank'),
+        new \Mithridatem\Validation\ValidationError('prenom', 'La propriete "prenom" doit contenir au moins 3 caracteres.', 'length.too_short', ['min' => 3]),
     ],
     'email' => [
-        'La propriete "email" doit contenir une adresse email valide.',
+        new \Mithridatem\Validation\ValidationError('email', 'La propriete "email" doit contenir une adresse email valide.', 'email.invalid'),
     ],
 ]
 ```
+
+## Objet ValidationError et codes d’erreur
+
+`Mithridatem\Validation\ValidationError` est une classe `final readonly`, avec quatre propriétés publiques :
+
+```php
+public function __construct(
+    public string $property,
+    public string $message,
+    public string $code,
+    public array $parameters = [],
+);
+```
+
+`parameters` contient les métadonnées nécessaires au traitement de l'erreur. Les contraintes fournies n'y ajoutent pas la valeur saisie. Les codes suivants permettent d'identifier le motif de l'échec indépendamment du message affiché :
+
+| Contrainte | Code | Paramètres |
+| --- | --- | --- |
+| `NotBlank` | `not_blank.null` | Aucun |
+| `NotBlank` | `not_blank.blank` | Aucun |
+| `Length` | `length.too_short` | `min` |
+| `Length` | `length.too_long` | `max` |
+| `Email` | `email.invalid` | Aucun |
+| `Pattern` | `pattern.invalid_type` | Aucun |
+| `Pattern` | `pattern.no_match` | `pattern` |
+| `Negative` | `negative.not_numeric` | Aucun |
+| `Negative` | `negative.not_negative` | Aucun |
+| `NegativeOrZero` | `negative_or_zero.not_numeric` | Aucun |
+| `NegativeOrZero` | `negative_or_zero.not_negative_or_zero` | Aucun |
+| `Positive` | `positive.not_numeric` | Aucun |
+| `Positive` | `positive.not_positive` | Aucun |
+| `PositiveOrZero` | `positive_or_zero.not_numeric` | Aucun |
+| `PositiveOrZero` | `positive_or_zero.not_positive_or_zero` | Aucun |
+
+La librairie fournit le message ; la traduction reste à la charge de l'application. Les paramètres des contraintes fournies sont des scalaires. Pour vos contraintes personnalisées, préférez également des valeurs scalaires afin de conserver des métadonnées simples et sérialisables.
 
 ## Référence des contraintes
 
@@ -124,9 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 Dans le template, affichez les erreurs à côté du champ :
 
 ```php
-<?php foreach ($errors['email'] ?? [] as $message): ?>
+<?php foreach ($errors['email'] ?? [] as $error): ?>
     <p class="error">
-        <?= htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
+        <?= htmlspecialchars($error->message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
     </p>
 <?php endforeach; ?>
 ```
@@ -152,6 +187,25 @@ if ($errors !== []) {
 // Poursuivre le traitement de la requête valide.
 ```
 
+Les propriétés publiques de `ValidationError` sont sérialisées nativement. Par exemple, une erreur de longueur produit :
+
+```json
+{
+  "errors": {
+    "prenom": [
+      {
+        "property": "prenom",
+        "message": "La propriete \"prenom\" doit contenir au moins 3 caracteres.",
+        "code": "length.too_short",
+        "parameters": {"min": 3}
+      }
+    ]
+  }
+}
+```
+
+Sans métadonnées, `parameters` vaut `[]` et est sérialisé comme un tableau JSON vide.
+
 Le code HTTP et l'enveloppe `errors` sont des choix de l'application. La librairie retourne uniquement le tableau PHP.
 
 ## Créer une contrainte personnalisée
@@ -162,11 +216,12 @@ Une contrainte est un attribut de propriété qui implémente `Mithridatem\Valid
 <?php
 
 use Mithridatem\Validation\Contracts\PropertyConstraint;
+use Mithridatem\Validation\ValidationError;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class CodePostal implements PropertyConstraint
 {
-    /** @return list<string> */
+    /** @return list<ValidationError> */
     public function validate(string $property, mixed $value): array
     {
         if ($value === null) {
@@ -174,9 +229,13 @@ final class CodePostal implements PropertyConstraint
         }
 
         if (!is_string($value) || preg_match('/^[0-9]{5}$/', $value) !== 1) {
-            return [sprintf(
-                'La propriété "%s" doit contenir un code postal de 5 chiffres.',
-                $property
+            return [new ValidationError(
+                property: $property,
+                message: sprintf(
+                    'La propriété "%s" doit contenir un code postal de 5 chiffres.',
+                    $property
+                ),
+                code: 'code_postal.invalid',
             )];
         }
 
@@ -195,10 +254,23 @@ final class Adresse
 }
 
 $errors = (new Mithridatem\Validation\Validator())->validate(new Adresse());
-// ['codePostal' => ['La propriété "codePostal" doit contenir un code postal de 5 chiffres.']]
+// $errors['codePostal'][0]->code === 'code_postal.invalid'
+// $errors['codePostal'][0]->property === 'codePostal'
 ```
 
-Une contrainte peut retourner plusieurs messages. Retournez toujours une liste de chaînes : le regroupement par propriété est effectué par le validateur.
+Une contrainte peut retourner plusieurs erreurs. Retournez toujours une liste d'objets `ValidationError` : le regroupement par propriété est effectué par le validateur.
+
+## Migrer depuis les tableaux de messages
+
+Le tableau extérieur conserve les mêmes clés. Ses listes contiennent désormais des objets, ce qui modifie le contrat public.
+
+| Avant | Maintenant |
+| --- | --- |
+| `array<string, list<string>>` | `array<string, list<ValidationError>>` |
+| `$message` dans la boucle d'affichage | `$error->message` |
+| `return ['Message'];` dans une contrainte | `return [new ValidationError($property, 'Message', 'custom.invalid')];` |
+
+Adaptez également les tests qui comparaient des chaînes et les consommateurs JSON qui recevaient des listes de textes. Une contrainte doit renseigner `property` avec le nom fourni par le validateur. Le code d'erreur est indépendant du message et permet de sélectionner une traduction sans analyser le texte.
 
 ## Migrer depuis la validation par exception
 
@@ -225,7 +297,7 @@ if ($errors === []) {
 }
 ```
 
-Les contraintes personnalisées doivent également passer du retour `void` au retour `array`, remplacer les exceptions de validation par des listes de messages et retourner `[]` en cas de succès.
+Les contraintes personnalisées doivent également passer du retour `void` au retour `array`, remplacer les exceptions de validation par des listes d'objets `ValidationError` et retourner `[]` en cas de succès.
 
 `ValidationException` est conservée mais dépréciée. Les contraintes fournies ne la lèvent plus. Le validateur ne transforme pas les exceptions d'une contrainte personnalisée en messages : adaptez son implémentation au nouveau contrat.
 

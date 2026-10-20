@@ -11,7 +11,7 @@ class Validator
     /**
      * Inspect attributes on the given entity and run each constraint.
      *
-     * @return array<string, list<string>> All error messages grouped by property.
+     * @return array<string, list<ValidationError>> All validation errors grouped by property.
      */
     public function validate(object $entity): array
     {
@@ -37,11 +37,11 @@ class Validator
             foreach ($attributes as $attribute) {
                 /** @var PropertyConstraint $constraint */
                 $constraint = $attribute->newInstance();
-                $messages = $constraint->validate($property->getName(), $value);
+                $violations = $constraint->validate($property->getName(), $value);
 
-                if ($messages !== []) {
+                if ($violations !== []) {
                     $name = $property->getName();
-                    $errors[$name] = array_merge($errors[$name] ?? [], $messages);
+                    $errors[$name] = array_merge($errors[$name] ?? [], $violations);
                 }
             }
         }

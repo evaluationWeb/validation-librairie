@@ -5,7 +5,7 @@ namespace Mithridatem\Validation\Exception;
 use Exception;
 
 /**
- * @deprecated Validation errors are now returned as arrays by Validator::validate().
+ * @deprecated Validator::validate() now returns ValidationError objects grouped by property.
  */
 class ValidationException extends Exception
 {
