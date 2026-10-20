@@ -4,6 +4,7 @@ namespace Mithridatem\Validation\Tests;
 
 use Mithridatem\Validation\Tests\Fixtures\User;
 use Mithridatem\Validation\Validator;
+use Mithridatem\Validation\ValidationError;
 use PHPUnit\Framework\TestCase;
 
 class ValidatorTest extends TestCase
@@ -99,7 +100,7 @@ class ValidatorTest extends TestCase
 
         $this->assertSame(['negative'], array_keys($errors));
         $this->assertCount(1, $errors['negative']);
-        $this->assertStringContainsString('doit être un nombre négatif', $errors['negative'][0]);
+        $this->assertStringContainsString('doit être un nombre négatif', $errors['negative'][0]->message);
     }
 
     public function testItAllowsNullWhenNegativeConstraintIsSet(): void
@@ -135,7 +136,7 @@ class ValidatorTest extends TestCase
 
         $this->assertSame(['negativeOrZero'], array_keys($errors));
         $this->assertCount(1, $errors['negativeOrZero']);
-        $this->assertStringContainsString('doit être un nombre négatif ou égal à zéro', $errors['negativeOrZero'][0]);
+        $this->assertStringContainsString('doit être un nombre négatif ou égal à zéro', $errors['negativeOrZero'][0]->message);
     }
 
     public function testItAllowsNullWhenNegativeOrZeroIsSet(): void
@@ -164,7 +165,7 @@ class ValidatorTest extends TestCase
 
         $this->assertSame(['positive'], array_keys($errors));
         $this->assertCount(1, $errors['positive']);
-        $this->assertStringContainsString('doit être un nombre positif', $errors['positive'][0]);
+        $this->assertStringContainsString('doit être un nombre positif', $errors['positive'][0]->message);
     }
 
     public function testItAllowsNullWhenPositiveConstraintIsSet(): void
@@ -201,7 +202,7 @@ class ValidatorTest extends TestCase
 
         $this->assertSame(['positiveOrZero'], array_keys($errors));
         $this->assertCount(1, $errors['positiveOrZero']);
-        $this->assertStringContainsString('doit être un nombre positif ou égal à zéro', $errors['positiveOrZero'][0]);
+        $this->assertStringContainsString('doit être un nombre positif ou égal à zéro', $errors['positiveOrZero'][0]->message);
     }
 
     public function testItAllowsNullWhenPositiveOrZeroIsSet(): void
@@ -219,13 +220,13 @@ class ValidatorTest extends TestCase
         $user->setEmail('invalid');
         $user->setPositive(-1);
 
-        $this->assertSame([
+        $this->assertEquals([
             'firstname' => [
-                'La propriete "firstname" ne peut pas etre vide.',
-                'La propriete "firstname" doit contenir au moins 3 caracteres.',
+                new ValidationError('firstname', 'La propriete "firstname" ne peut pas etre vide.', 'not_blank.blank'),
+                new ValidationError('firstname', 'La propriete "firstname" doit contenir au moins 3 caracteres.', 'length.too_short', ['min' => 3]),
             ],
-            'email' => ['La propriete "email" doit contenir une adresse email valide.'],
-            'positive' => ['La propriété "positive" doit être un nombre positif.'],
+            'email' => [new ValidationError('email', 'La propriete "email" doit contenir une adresse email valide.', 'email.invalid')],
+            'positive' => [new ValidationError('positive', 'La propriété "positive" doit être un nombre positif.', 'positive.not_positive')],
         ], $this->validator->validate($user));
     }
 
@@ -246,8 +247,8 @@ class ValidatorTest extends TestCase
             private string $name;
         };
 
-        $this->assertSame([
-            'name' => ['La propriete "name" ne peut pas etre nulle.'],
+        $this->assertEquals([
+            'name' => [new ValidationError('name', 'La propriete "name" ne peut pas etre nulle.', 'not_blank.null')],
         ], $this->validator->validate($entity));
     }
 
@@ -274,7 +275,10 @@ class ValidatorTest extends TestCase
             public string $name = 'invalid';
         };
 
-        $this->assertSame(['name' => ['First error.', 'Second error.']], $this->validator->validate($entity));
+        $this->assertEquals(['name' => [
+            new ValidationError('name', 'First error.', 'custom.first'),
+            new ValidationError('name', 'Second error.', 'custom.second'),
+        ]], $this->validator->validate($entity));
     }
 
     private function createValidUser(): User
@@ -293,6 +297,9 @@ class MultipleErrors implements \Mithridatem\Validation\Contracts\PropertyConstr
 {
     public function validate(string $property, mixed $value): array
     {
-        return ['First error.', 'Second error.'];
+        return [
+            new ValidationError($property, 'First error.', 'custom.first'),
+            new ValidationError($property, 'Second error.', 'custom.second'),
+        ];
     }
 }
