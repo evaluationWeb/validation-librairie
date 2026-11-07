@@ -114,3 +114,67 @@ règles métier adaptés en amont.
 Une évolution du comportement des contraintes ferait l'objet d'une
 analyse d'impact et d'une PR distincte, si un défaut de sécurité
 intrinsèque et reproductible était démontré.
+
+
+## Troisième passe — contraintes personnalisées et sérialisation
+
+Les tests de `tests/Security/CustomConstraintSecurityTest.php` vérifient la
+frontière entre la bibliothèque et les extensions fournies par l'application.
+
+### Exécution des contraintes personnalisées
+
+Une contrainte `PropertyConstraint` est une **classe PHP de confiance**.
+Le validateur instancie son attribut au moment de `validate()`, puis appelle
+sa méthode `validate()`. Le constructeur et la méthode peuvent avoir des
+effets de bord. Ne pas charger d'attributs applicatifs provenant de sources
+non maîtrisées.
+
+Les contraintes peuvent recevoir la valeur d'une propriété privée. Le
+validateur utilise Reflection pour lire la propriété ; la confidentialité
+de cette valeur dépend ensuite du comportement de la contrainte.
+
+### Contrat des erreurs : confiance dans les contraintes
+
+L'interface `PropertyConstraint` déclare un `array` en retour, avec un
+contrat PHPDoc `list<ValidationError>`. Le runtime PHP ne garantit pas le type
+de chaque élément du tableau. La bibliothèque ne contrôle pas non plus que
+`ValidationError::property` correspond à la propriété inspectée : elle
+regroupe les erreurs sous le nom de propriété fourni par Reflection.
+
+Ces cas sont des **violations du contrat par une contrainte personnalisée**,
+pas une vulnérabilité intrinsèque prouvée dans la bibliothèque. Les
+implémentations personnalisées doivent retourner uniquement des
+`ValidationError` cohérents.
+
+Une exception lancée par une contrainte personnalisée interrompt l'appel
+courant à `Validator::validate()`; elle n'est pas convertie en erreur de
+champ. Il appartient à l'application de gérer ses erreurs de programmation
+et d'exécution.
+
+### Métadonnées et sortie HTTP
+
+`ValidationError` expose publiquement `property`, `message`, `code`
+et `parameters`. La classe `readonly` empêche une réassignation des
+propriétés, mais **ne supprime ni ne filtre** les secrets placés dans
+`message` ou `parameters`. `json_encode()` sérialise les propriétés
+publiques, ce qui peut transmettre ces secrets si une contrainte
+personnalisée y a inséré la valeur saisie.
+
+Éviter de mettre mots de passe, jetons, données personnelles ou valeurs
+brutes dans les messages et métadonnées d'erreur. Privilégier des codes
+d'erreur stables et des paramètres de règle non sensibles.
+
+Les métadonnées arbitraires ne sont pas nécessairement sérialisables :
+un flottant `INF` déclenche par exemple une `JsonException` avec
+`JSON_THROW_ON_ERROR`.
+
+Enfin, les messages d'erreur ne sont pas échappés pour HTML. Utiliser
+`htmlspecialchars(..., ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')` au rendu ;
+l'absence d'échappement dans un template peut créer une XSS, notamment avec
+une contrainte personnalisée qui inclut les données fournies par le client.
+
+### Décision de sécurité
+
+Ces tests exposent des responsabilités d'**intégration et d'extension**.
+Aucune modification de production n'est proposée sans démonstration d'une
+faille structurelle exploitable en usage conforme.
