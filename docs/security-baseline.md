@@ -56,3 +56,61 @@ Affichage des erreurs :
 Ces sujets sont à caractériser **avant** de décider d'une modification de
 production. La présente PR ne change aucune API, règle ni comportement de
 validation.
+
+
+## Deuxième passe — comportements adversariaux des contraintes
+
+Les tests de `tests/Security/AdversarialConstraintsTest.php` consignent
+des comportements de la version actuelle, sans demander de changement
+immédiat de contrat.
+
+### `Pattern` et erreurs PCRE
+
+`Pattern::validate()` utilise `!preg_match(...)`. Cela confond
+actuellement la valeur `0` (**aucune correspondance**) et `false`
+(**erreur du moteur PCRE**) :
+
+- dépassement d'une limite locale de backtracking ;
+- séquence UTF-8 invalide lorsque le modificateur `u` est utilisé.
+
+Dans les deux cas, `pattern.no_match` est retourné. Ce comportement
+est à prendre en compte pour l'observabilité des erreurs et la distinction
+entre donnée incorrecte et erreur d'exécution. Les expressions régulières
+proviennent normalement du code de l'application ; ne pas construire
+un pattern libre à partir d'une requête HTTP et limiter la taille des
+entrées si les expressions sont complexes. Cette caractérisation ne prouve
+pas une vulnérabilité exploitable en usage conforme.
+
+### `Length` et entrées non textuelles
+
+`Length` convertit la valeur en `string` avant de compter les caractères.
+Un tableau provoque actuellement un avertissement PHP « Array to string
+conversion » et est traité comme la chaîne `Array`. Un objet dépourvu
+de méthode `__toString()` provoque une erreur PHP. La validation
+des types des DTO et des tableaux `$_POST` est donc nécessaire avant
+d'appliquer cette contrainte.
+
+Les caractères UTF-8 sont comptés avec `mb_strlen()`, et non en octets.
+
+### Valeurs numériques non finies
+
+Les contraintes `Positive`, `PositiveOrZero`, `Negative` et
+`NegativeOrZero` utilisent `is_numeric()` puis une comparaison de signe.
+Dans la version actuelle :
+
+- `INF` est accepté par les contraintes positives ;
+- `-INF` est accepté par les contraintes négatives ;
+- `NAN` est accepté par les **quatre** contraintes, puisque ses
+  comparaisons avec zéro sont fausses ;
+- une chaîne numérique en notation exponentielle, telle que `1e309`,
+  peut être acceptée.
+
+Ces contraintes expriment uniquement un **signe**, pas la finitude,
+la précision décimale, la plage autorisée ou l'aptitude au calcul.
+Pour un prix, une quantité ou un montant, imposer un format et des
+règles métier adaptés en amont.
+
+**Décision à ce stade :** documenter et tester avant tout changement.
+Une évolution du comportement des contraintes ferait l'objet d'une
+analyse d'impact et d'une PR distincte, si un défaut de sécurité
+intrinsèque et reproductible était démontré.
