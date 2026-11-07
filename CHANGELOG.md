@@ -4,6 +4,20 @@ Toutes les modifications notables de ce projet seront documentees dans ce fichie
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-07
+
+### Sécurité et non-régression
+
+- Ajout d'une baseline de sécurité couvrant les contraintes standard, les données facultatives, les types inattendus et la confidentialité des erreurs intégrées.
+- Tests adversariaux des erreurs PCRE, des conversions de `Length` et des valeurs numériques non finies.
+- Tests des contraintes personnalisées : accès aux propriétés, effets de bord, contrat de retour, exceptions et sérialisation HTML/JSON.
+- Documentation des frontières de confiance et des limites d'intégration dans `docs/security-baseline.md`.
+- Extension de la CI à PHP 8.2, 8.3, 8.4 et 8.5.
+
+**Compatibilité :** aucune modification du code de production, des signatures publiques ou des règles existantes de validation. Cette version ajoute des tests et de la documentation.
+
+## [1.2.1]
+
 ### Objets d’erreur de validation
 
 - Ajout de `ValidationError`, objet `final readonly` contenant `property`, `message`, `code` et `parameters`.
